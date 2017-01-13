@@ -207,12 +207,17 @@ end
 immutable DivideError        <: Exception end
 immutable DomainError        <: Exception end
 immutable OverflowError      <: Exception end
-immutable InexactError       <: Exception end
 immutable OutOfMemoryError   <: Exception end
 immutable ReadOnlyMemoryError<: Exception end
 immutable SegmentationFault  <: Exception end
 immutable StackOverflowError <: Exception end
 immutable UndefRefError      <: Exception end
+immutable InexactError <: Exception
+    f::Any
+    T::Type
+    val::Any
+    InexactError(f::ANY, T::ANY, val) = (@_noinline_meta; new(f, T, val))
+end
 immutable UndefVarError      <: Exception
     var::Symbol
 end

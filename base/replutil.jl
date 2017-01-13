@@ -192,6 +192,10 @@ function showerror(io::IO, ex::TypeError)
     end
 end
 
+function showerror(io::IO, ex::InexactError)
+    print(io, "InexactError: ", ex.f, '(', ex.T, ", ", ex.val, "::", typeof(ex.val), ')')
+end
+
 function showerror(io::IO, ex, bt; backtrace=true)
     try
         with_output_color(have_color ? error_color() : :nothing, io) do io

@@ -21,7 +21,7 @@ typealias Complex32  Complex{Float16}
 convert{T<:Real}(::Type{Complex{T}}, x::Real) = Complex{T}(x,0)
 convert{T<:Real}(::Type{Complex{T}}, z::Complex) = Complex{T}(real(z),imag(z))
 convert{T<:Real}(::Type{T}, z::Complex) =
-    isreal(z) ? convert(T,real(z)) : throw(InexactError())
+    isreal(z) ? convert(T,real(z)) : throw(InexactError(convert, T, z))
 
 convert(::Type{Complex}, z::Complex) = z
 convert(::Type{Complex}, x::Real) = Complex(x)

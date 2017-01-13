@@ -1405,9 +1405,9 @@ Convert a hexadecimal string to the floating point number it represents.
 hex2num
 
 """
-    InexactError()
+    InexactError(f, T, x)
 
-Type conversion cannot be done exactly.
+Conversion of `x` to type `T` in function `f` cannot be done exactly.
 """
 InexactError
 

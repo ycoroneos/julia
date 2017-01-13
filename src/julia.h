@@ -524,13 +524,13 @@ extern JL_DLLEXPORT jl_datatype_t *jl_initerror_type;
 extern JL_DLLEXPORT jl_datatype_t *jl_typeerror_type;
 extern JL_DLLEXPORT jl_datatype_t *jl_methoderror_type;
 extern JL_DLLEXPORT jl_datatype_t *jl_undefvarerror_type;
+extern JL_DLLEXPORT jl_datatype_t *jl_inexacterror_type;
 extern JL_DLLEXPORT jl_value_t *jl_stackovf_exception;
 extern JL_DLLEXPORT jl_value_t *jl_memory_exception;
 extern JL_DLLEXPORT jl_value_t *jl_readonlymemory_exception;
 extern JL_DLLEXPORT jl_value_t *jl_diverror_exception;
 extern JL_DLLEXPORT jl_value_t *jl_domain_exception;
 extern JL_DLLEXPORT jl_value_t *jl_overflow_exception;
-extern JL_DLLEXPORT jl_value_t *jl_inexact_exception;
 extern JL_DLLEXPORT jl_value_t *jl_undefref_exception;
 extern JL_DLLEXPORT jl_value_t *jl_interrupt_exception;
 extern JL_DLLEXPORT jl_datatype_t *jl_boundserror_type;
@@ -1253,6 +1253,7 @@ JL_DLLEXPORT void JL_NORETURN jl_type_error_rt(const char *fname,
                                                const char *context,
                                                jl_value_t *ty, jl_value_t *got);
 JL_DLLEXPORT void JL_NORETURN jl_undefined_var_error(jl_sym_t *var);
+JL_DLLEXPORT void JL_NORETURN jl_inexact_error(jl_value_t *f, jl_value_t *ty, jl_value_t *x);
 JL_DLLEXPORT void JL_NORETURN jl_bounds_error(jl_value_t *v, jl_value_t *t);
 JL_DLLEXPORT void JL_NORETURN jl_bounds_error_v(jl_value_t *v,
                                                 jl_value_t **idxs, size_t nidxs);

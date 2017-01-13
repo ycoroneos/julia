@@ -342,6 +342,7 @@ static Function *jlerror_func;
 static Function *jltypeerror_func;
 static Function *jlundefvarerror_func;
 static Function *jlboundserror_func;
+static Function *jlinexacterror_func;
 static Function *jluboundserror_func;
 static Function *jlvboundserror_func;
 static Function *jlboundserrorv_func;
@@ -5529,7 +5530,6 @@ static void init_julia_llvm_env(Module *m)
     global_jlvalue_to_llvm("jl_undefref_exception", &jl_undefref_exception, m);
     global_jlvalue_to_llvm("jl_domain_exception", &jl_domain_exception, m);
     global_jlvalue_to_llvm("jl_overflow_exception", &jl_overflow_exception, m);
-    global_jlvalue_to_llvm("jl_inexact_exception", &jl_inexact_exception, m);
 
     jlRTLD_DEFAULT_var =
         new GlobalVariable(*m, T_pint8,
@@ -5609,6 +5609,17 @@ static void init_julia_llvm_env(Module *m)
                          "jl_undefined_var_error", m);
     jlundefvarerror_func->setDoesNotReturn();
     add_named_global(jlundefvarerror_func, &jl_undefined_var_error);
+
+    std::vector<Type*> args3_inexacterror(0);
+    args3_inexacterror.push_back(T_pjlvalue);
+    args3_inexacterror.push_back(T_psize);
+    args3_inexacterror.push_back(T_size);
+    jlinexacterror_func =
+        Function::Create(FunctionType::get(T_void, args3_inexacterror, false),
+                         Function::ExternalLinkage,
+                         "jl_inexact_error", m);
+    jlundefvarerror_func->setDoesNotReturn();
+    add_named_global(jlinexacterror_func, &jl_inexact_error);
 
     std::vector<Type*> args2_boundserrorv(0);
     args2_boundserrorv.push_back(T_pjlvalue);

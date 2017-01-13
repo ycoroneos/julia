@@ -1638,4 +1638,9 @@ iteratoreltype(::Type{Task}) = EltypeUnknown()
 
 isempty(::Task) = error("isempty not defined for Tasks")
 
+function InexactError()
+    depwarn("InexactError() is deprecated, supply the calling function, type, and value (see help)", :InexactError)
+    InexactError(nothing, Any, nothing)
+end
+
 # End deprecations scheduled for 0.6

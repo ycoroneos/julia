@@ -625,8 +625,8 @@ static jl_cgval_t generic_trunc(jl_value_t *targ, jl_value_t *x, jl_codectx_t *c
     if (check) {
         Value *back = signd ? builder.CreateSExt(ans, ix->getType()) :
             builder.CreateZExt(ans, ix->getType());
-        raise_exception_unless(builder.CreateICmpEQ(back, ix),
-                               literal_pointer_val(jl_inexact_exception), ctx);
+        emit_inexacterror_unless(builder.CreateICmpEQ(back, ix),
+                                 targ, emit_expr(x, ctx), ctx);
     }
     return mark_julia_type(ans, false, jlto, ctx);
 }
@@ -840,7 +840,7 @@ struct math_builder {
 };
 
 static Value *emit_untyped_intrinsic(intrinsic f, Value *x, Value *y, Value *z, size_t nargs,
-                                     jl_codectx_t *ctx, jl_datatype_t **newtyp, jl_value_t* xtyp);
+                                     jl_codectx_t *ctx, jl_datatype_t **newtyp, jl_value_t* xtyp, const jl_cgval_t &xinfo);
 static jl_cgval_t emit_intrinsic(intrinsic f, jl_value_t **args, size_t nargs,
                                  jl_codectx_t *ctx)
 {
@@ -1066,7 +1066,7 @@ static jl_cgval_t emit_intrinsic(intrinsic f, jl_value_t **args, size_t nargs,
         if (f == not_int && xinfo.typ == (jl_value_t*)jl_bool_type)
             r = builder.CreateXor(x, ConstantInt::get(T_int8, 1, true));
         else
-            r = emit_untyped_intrinsic(f, x, y, z, nargs, ctx, (jl_datatype_t**)&newtyp, xinfo.typ);
+            r = emit_untyped_intrinsic(f, x, y, z, nargs, ctx, (jl_datatype_t**)&newtyp, xinfo.typ, xinfo);
 
         if (!newtyp && r->getType() != x->getType())
             // cast back to the exact original type (e.g. float vs. int) before remarking as a julia type
@@ -1081,7 +1081,7 @@ static jl_cgval_t emit_intrinsic(intrinsic f, jl_value_t **args, size_t nargs,
 }
 
 static Value *emit_untyped_intrinsic(intrinsic f, Value *x, Value *y, Value *z, size_t nargs,
-                                     jl_codectx_t *ctx, jl_datatype_t **newtyp, jl_value_t* xtyp)
+                                     jl_codectx_t *ctx, jl_datatype_t **newtyp, jl_value_t* xtyp, const jl_cgval_t &xinfo)
 {
     Type *t = x->getType();
     Value *fy;
@@ -1242,11 +1242,11 @@ static Value *emit_untyped_intrinsic(intrinsic f, Value *x, Value *y, Value *z, 
     case check_top_bit:
         // raise InexactError if argument's top bit is set
         x = JL_INT(x);
-        raise_exception_if(builder.
-                           CreateTrunc(builder.
-                                       CreateLShr(x, ConstantInt::get(t, t->getPrimitiveSizeInBits()-1)),
-                                       T_int1),
-                           literal_pointer_val(jl_inexact_exception), ctx);
+        emit_inexacterror_if(builder.
+                             CreateTrunc(builder.
+                                         CreateLShr(x, ConstantInt::get(t, t->getPrimitiveSizeInBits()-1)),
+                                         T_int1),
+                             xtyp, xinfo, ctx);
         return x;
 
     case eq_int:  *newtyp = jl_bool_type; return builder.CreateICmpEQ(JL_INT(x), JL_INT(y));

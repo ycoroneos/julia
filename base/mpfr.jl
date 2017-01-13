@@ -191,20 +191,20 @@ unsafe_cast{T<:Integer}(::Type{T}, x::BigFloat, r::RoundingMode) = unsafe_cast(T
 unsafe_trunc{T<:Integer}(::Type{T}, x::BigFloat) = unsafe_cast(T,x,RoundToZero)
 
 function trunc{T<:Union{Signed,Unsigned}}(::Type{T}, x::BigFloat)
-    (typemin(T) <= x <= typemax(T)) || throw(InexactError())
+    (typemin(T) <= x <= typemax(T)) || throw(InexactError(trunc, T, x))
     unsafe_cast(T,x,RoundToZero)
 end
 function floor{T<:Union{Signed,Unsigned}}(::Type{T}, x::BigFloat)
-    (typemin(T) <= x <= typemax(T)) || throw(InexactError())
+    (typemin(T) <= x <= typemax(T)) || throw(InexactError(floor, T, x))
     unsafe_cast(T,x,RoundDown)
 end
 function ceil{T<:Union{Signed,Unsigned}}(::Type{T}, x::BigFloat)
-    (typemin(T) <= x <= typemax(T)) || throw(InexactError())
+    (typemin(T) <= x <= typemax(T)) || throw(InexactError(ceil, T, x))
     unsafe_cast(T,x,RoundUp)
 end
 
 function round{T<:Union{Signed,Unsigned}}(::Type{T}, x::BigFloat)
-    (typemin(T) <= x <= typemax(T)) || throw(InexactError())
+    (typemin(T) <= x <= typemax(T)) || throw(InexactError(round, T, x))
     unsafe_cast(T,x,ROUNDING_MODE[])
 end
 
@@ -219,14 +219,14 @@ floor(::Type{Integer}, x::BigFloat) = floor(BigInt, x)
 ceil(::Type{Integer}, x::BigFloat) = ceil(BigInt, x)
 round(::Type{Integer}, x::BigFloat) = round(BigInt, x)
 
-convert(::Type{Bool}, x::BigFloat) = x==0 ? false : x==1 ? true : throw(InexactError())
+convert(::Type{Bool}, x::BigFloat) = x==0 ? false : x==1 ? true : throw(InexactError(convert, Bool, x))
 function convert(::Type{BigInt},x::BigFloat)
-    isinteger(x) || throw(InexactError())
+    isinteger(x) || throw(InexactError(convert, BigInt, x))
     trunc(BigInt,x)
 end
 
 function convert{T<:Integer}(::Type{T},x::BigFloat)
-    isinteger(x) || throw(InexactError())
+    isinteger(x) || throw(InexactError(convert, T, x))
     trunc(T,x)
 end
 

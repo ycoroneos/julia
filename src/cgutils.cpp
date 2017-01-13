@@ -853,6 +853,31 @@ static Value *emit_bounds_check(const jl_cgval_t &ainfo, jl_value_t *ty, Value *
     return im1;
 }
 
+static void emit_inexacterror_unless(Value *cond, jl_value_t *type, const jl_cgval_t &x, jl_codectx_t *ctx)
+{
+    BasicBlock *failBB = BasicBlock::Create(jl_LLVMContext,"fail",ctx->f);
+    BasicBlock *passBB = BasicBlock::Create(jl_LLVMContext,"pass");
+    builder.CreateCondBr(cond, passBB, failBB);
+    builder.SetInsertPoint(failBB);
+    Value *fname_val = stringConstPtr(ctx->funcName);
+#if JL_LLVM_VERSION >= 30700
+    builder.CreateCall(prepare_call(jlinexacterror_func),
+                       { fname_val, literal_pointer_val(type),
+                         boxed(x, ctx, false)});
+#else
+    builder.CreateCall3(prepare_call(jlinexacterror_func),
+                        fname_val, literal_pointer_val(type),
+                        boxed(x, ctx, false));
+#endif
+    return;
+}
+
+static void emit_inexacterror_if(Value *cond, jl_value_t *type, const jl_cgval_t &x, jl_codectx_t *ctx)
+{
+    emit_inexacterror_unless(builder.CreateXor(cond, ConstantInt::get(T_int1,-1)),
+                             type, x, ctx);
+}
+
 // --- loading and storing ---
 
 // If given alignment is 0 and LLVM's assumed alignment for a load/store via ptr

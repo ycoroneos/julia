@@ -398,7 +398,7 @@ static inline jl_value_t *jl_intrinsic_cvt(jl_value_t *ty, jl_value_t *a, const 
     unsigned isize = jl_datatype_size(aty);
     unsigned osize = jl_datatype_size(ty);
     if (check_op && check_op(isize, osize, pa))
-        jl_throw(jl_inexact_exception);
+        jl_throw(jl_new_struct(jl_inexacterror_type, op, ty, a));
     jl_value_t *newv = jl_gc_alloc(ptls, jl_datatype_size(ty), ty);
     op(aty == (jl_value_t*)jl_bool_type ? 1 : isize * host_char_bit, pa,
             osize * host_char_bit, jl_data_ptr(newv));
@@ -904,7 +904,7 @@ JL_DLLEXPORT jl_value_t *jl_check_top_bit(jl_value_t *a)
     if (!jl_is_bitstype(ty))
         jl_error("check_top_bit: value is not a bitstype");
     if (signbitbyte(jl_data_ptr(a), jl_datatype_size(ty)))
-        jl_throw(jl_inexact_exception);
+        jl_throw(jl_new_struct(jl_inexacterror_type, jl_any_type, jl_any_type, a));
     return a;
 }
 
