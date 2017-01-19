@@ -150,8 +150,8 @@ the dictionary, and the nonzero values are the values from the dictionary.
 """
 function sparsevec{Tv,Ti<:Integer}(dict::Associative{Ti,Tv})
     m = length(dict)
-    nzind = Array{Ti}(m)
-    nzval = Array{Tv}(m)
+    nzind = Vector{Ti}(m)
+    nzval = Vector{Tv}(m)
 
     cnt = 0
     len = zero(Ti)
@@ -171,8 +171,8 @@ end
 
 function sparsevec{Tv,Ti<:Integer}(dict::Associative{Ti,Tv}, len::Integer)
     m = length(dict)
-    nzind = Array{Ti}(m)
-    nzval = Array{Tv}(m)
+    nzind = Vector{Ti}(m)
+    nzval = Vector{Tv}(m)
 
     cnt = 0
     maxk = convert(Ti, len)
@@ -264,8 +264,8 @@ function _dense2sparsevec{Tv,Ti}(s::AbstractArray{Tv}, initcap::Ti)
     # pre-condition: initcap > 0; the initcap determines the index type
     n = length(s)
     cap = initcap
-    nzind = Array{Ti}(cap)
-    nzval = Array{Tv}(cap)
+    nzind = Vector{Ti}(cap)
+    nzval = Vector{Tv}(cap)
     c = 0
     @inbounds for i = 1:n
         v = s[i]
@@ -421,8 +421,8 @@ function Base.getindex{Tv,Ti}(A::SparseMatrixCSC{Tv,Ti}, i::Integer, J::Abstract
     nJ = length(J)
     colptrA = A.colptr; rowvalA = A.rowval; nzvalA = A.nzval
 
-    nzinds = Array{Ti}(0)
-    nzvals = Array{Tv}(0)
+    nzinds = Vector{Ti}(0)
+    nzvals = Vector{Tv}(0)
 
     # adapted from SparseMatrixCSC's sorted_bsearch_A
     ptrI = 1
@@ -455,8 +455,8 @@ function _logical_index{Tv}(A::SparseMatrixCSC{Tv}, I::AbstractArray{Bool})
     nnzB = min(n, nnz(A))
 
     colptrA = A.colptr; rowvalA = A.rowval; nzvalA = A.nzval
-    rowvalB = Array{Int}(nnzB)
-    nzvalB = Array{Tv}(nnzB)
+    rowvalB = Vector{Int}(nnzB)
+    nzvalB = Vector{Tv}(nnzB)
     c = 1
     rowB = 1
 
@@ -500,8 +500,8 @@ function getindex{Tv}(A::SparseMatrixCSC{Tv}, I::UnitRange)
 
     n = length(I)
     nnzB = min(n, nnz(A))
-    rowvalB = Array{Int}(nnzB)
-    nzvalB = Array{Tv}(nnzB)
+    rowvalB = Vector{Int}(nnzB)
+    nzvalB = Vector{Tv}(nnzB)
 
     rowstart,colstart = ind2sub(szA, first(I))
     rowend,colend = ind2sub(szA, last(I))
@@ -535,8 +535,8 @@ function getindex{Tv}(A::SparseMatrixCSC{Tv}, I::AbstractVector)
 
     n = length(I)
     nnzB = min(n, nnz(A))
-    rowvalB = Array{Int}(nnzB)
-    nzvalB = Array{Tv}(nnzB)
+    rowvalB = Vector{Int}(nnzB)
+    nzvalB = Vector{Tv}(nnzB)
 
     idxB = 1
     for i in 1:n
@@ -565,7 +565,7 @@ end
 
 function find{Tv,Ti}(x::SparseVector{Tv,Ti})
     numnz = nnz(x)
-    I = Array{Ti,1}(numnz)
+    I = Vector{Ti}(numnz)
 
     nzind = x.nzind
     nzval = x.nzval
@@ -589,8 +589,8 @@ end
 function findnz{Tv,Ti}(x::SparseVector{Tv,Ti})
     numnz = nnz(x)
 
-    I = Array{Ti,1}(numnz)
-    V = Array{Tv,1}(numnz)
+    I = Vector{Ti}(numnz)
+    V = Vector{Tv}(numnz)
 
     nzind = x.nzind
     nzval = x.nzval
@@ -645,8 +645,8 @@ function getindex{Tv,Ti}(x::AbstractSparseVector{Tv,Ti}, I::UnitRange)
     # compute the number of non-zeros
     jrgn = j0:j1
     mr = length(jrgn)
-    rind = Array{Ti}(mr)
-    rval = Array{Tv}(mr)
+    rind = Vector{Ti}(mr)
+    rval = Vector{Tv}(mr)
     if mr > 0
         c = 0
         for j in jrgn
@@ -790,9 +790,9 @@ function _absspvec_hcat{Tv,Ti}(X::AbstractSparseVector{Tv,Ti}...)
     end
 
     # construction
-    colptr = Array{Ti}(n+1)
-    nzrow = Array{Ti}(tnnz)
-    nzval = Array{Tv}(tnnz)
+    colptr = Vector{Ti}(n+1)
+    nzrow = Vector{Ti}(tnnz)
+    nzval = Vector{Tv}(tnnz)
     roff = 1
     @inbounds for j = 1:n
         xj = X[j]
@@ -822,8 +822,8 @@ function _absspvec_vcat{Tv,Ti}(X::AbstractSparseVector{Tv,Ti}...)
     end
 
     # construction
-    rnzind = Array{Ti}(tnnz)
-    rnzval = Array{Tv}(tnnz)
+    rnzind = Vector{Ti}(tnnz)
+    rnzval = Vector{Tv}(tnnz)
     ir = 0
     len = 0
     @inbounds for j = 1:n
@@ -889,7 +889,7 @@ end
 function hvcat(rows::Tuple{Vararg{Int}}, X::_SparseConcatGroup...)
     nbr = length(rows)  # number of block rows
 
-    tmp_rows = Array{SparseMatrixCSC}(nbr)
+    tmp_rows = Vector{SparseMatrixCSC}(nbr)
     k = 0
     @inbounds for i = 1 : nbr
         tmp_rows[i] = hcat(X[(1 : rows[i]) + k]...)
@@ -937,8 +937,8 @@ macro unarymap_nz2z_z2z(op, TF)
             xnzval = nonzeros(x)
             m = length(xnzind)
 
-            ynzind = Array{Ti}(m)
-            ynzval = Array{R}(m)
+            ynzind = Vector{Ti}(m)
+            ynzval = Vector{R}(m)
             ir = 0
             @inbounds for j = 1:m
                 i = xnzind[j]
@@ -1027,8 +1027,8 @@ function _binarymap{Tx,Ty}(f::Function,
     my = length(ynzind)
     cap = (mode == 0 ? min(mx, my) : mx + my)::Int
 
-    rind = Array{Int}(cap)
-    rval = Array{R}(cap)
+    rind = Vector{Int}(cap)
+    rval = Vector{R}(cap)
     ir = 0
     ix = 1
     iy = 1
@@ -1164,7 +1164,7 @@ function _binarymap{Tx,Ty}(f::Function,
     ynzval = nonzeros(y)
     m = length(ynzind)
 
-    dst = Array{R}(n)
+    dst = Vector{R}(n)
     if mode == 0
         ii = 1
         @inbounds for i = 1:m
@@ -1206,7 +1206,7 @@ function _binarymap{Tx,Ty}(f::Function,
     xnzval = nonzeros(x)
     m = length(xnzind)
 
-    dst = Array{R}(n)
+    dst = Vector{R}(n)
     if mode == 0
         ii = 1
         @inbounds for i = 1:m
@@ -1442,7 +1442,7 @@ function *{Ta,Tx}(A::StridedMatrix{Ta}, x::AbstractSparseVector{Tx})
     m, n = size(A)
     length(x) == n || throw(DimensionMismatch())
     Ty = promote_type(Ta, Tx)
-    y = Array{Ty}(m)
+    y = Vector{Ty}(m)
     A_mul_B!(y, A, x)
 end
 
@@ -1479,7 +1479,7 @@ function At_mul_B{Ta,Tx}(A::StridedMatrix{Ta}, x::AbstractSparseVector{Tx})
     m, n = size(A)
     length(x) == m || throw(DimensionMismatch())
     Ty = promote_type(Ta, Tx)
-    y = Array{Ty}(n)
+    y = Vector{Ty}(n)
     At_mul_B!(y, A, x)
 end
 
@@ -1526,7 +1526,7 @@ function densemv(A::SparseMatrixCSC, x::AbstractSparseVector; trans::Char='N')
     end
     xlen == length(x) || throw(DimensionMismatch())
     T = promote_type(eltype(A), eltype(x))
-    y = Array{T}(ylen)
+    y = Vector{T}(ylen)
     if trans == 'N' || trans == 'N'
         A_mul_B!(y, A, x)
     elseif trans == 'T' || trans == 't'
@@ -1641,8 +1641,8 @@ function _At_or_Ac_mul_B{TvA,TiA,TvX,TiX}(tfun::Function, A::SparseMatrixCSC{TvA
     Anzval = A.nzval
     mx = length(xnzind)
 
-    ynzind = Array{Ti}(n)
-    ynzval = Array{Tv}(n)
+    ynzind = Vector{Ti}(n)
+    ynzval = Vector{Tv}(n)
 
     jr = 0
     for j = 1:n
