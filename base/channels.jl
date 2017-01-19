@@ -40,7 +40,7 @@ type Channel{T} <: AbstractChannel
         if sz < 0
             throw(ArgumentError("Channel size must be either 0, a positive integer or Inf"))
         end
-        new(Condition(), Condition(), :open, Nullable{Exception}(), Array{T}(0), sz, Array{Condition}(0))
+        new(Condition(), Condition(), :open, Nullable{Exception}(), Vector{T}(0), sz, Vector{Condition}(0))
     end
 
     # deprecated empty constructor

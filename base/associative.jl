@@ -195,7 +195,7 @@ function merge(d::Associative, others::Associative...)
 end
 
 function filter!(f, d::Associative)
-    badkeys = Array{keytype(d)}(0)
+    badkeys = Vector{keytype(d)}(0)
     for (k,v) in d
         # don't delete!(d, k) here, since associative types
         # may not support mutation during iteration

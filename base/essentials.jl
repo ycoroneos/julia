@@ -125,7 +125,7 @@ function append_any(xs...)
     # used by apply() and quote
     # must be a separate function from append(), since apply() needs this
     # exact function.
-    out = Array{Any}(4)
+    out = Vector{Any}(4)
     l = 4
     i = 1
     for x in xs
@@ -272,7 +272,7 @@ end
 # used by interpolating quote and some other things in the front end
 function vector_any(xs::ANY...)
     n = length(xs)
-    a = Array{Any}(n)
+    a = Vector{Any}(n)
     @inbounds for i = 1:n
         Core.arrayset(a,xs[i],i)
     end

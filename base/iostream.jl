@@ -282,7 +282,7 @@ function read(s::IOStream)
             sz -= pos
         end
     end
-    b = Array{UInt8,1}(sz<=0 ? 1024 : sz)
+    b = Vector{UInt8}(sz<=0 ? 1024 : sz)
     nr = readbytes_all!(s, b, typemax(Int))
     resize!(b, nr)
 end
@@ -298,13 +298,13 @@ requested bytes, until an error or end-of-file occurs. If `all` is `false`, at m
 all stream types support the `all` option.
 """
 function read(s::IOStream, nb::Integer; all::Bool=true)
-    b = Array{UInt8,1}(nb)
+    b = Vector{UInt8}(nb)
     nr = readbytes!(s, b, nb, all=all)
     resize!(b, nr)
 end
 
 ## Character streams ##
-const _chtmp = Array{Char}(1)
+const _chtmp = Vector{Char}(1)
 function peekchar(s::IOStream)
     if ccall(:ios_peekutf8, Cint, (Ptr{Void}, Ptr{Char}), s, _chtmp) < 0
         return Char(-1)

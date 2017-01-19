@@ -206,7 +206,7 @@ if is_linux()
 end # linux-only
 
 function dllist()
-    dynamic_libraries = Array{AbstractString}(0)
+    dynamic_libraries = Vector{AbstractString}(0)
 
     @static if is_linux()
         const callback = cfunction(dl_phdr_info_callback, Cint,

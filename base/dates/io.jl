@@ -62,7 +62,7 @@ abstract DayOfWeekSlot
 immutable SlotRule
     rules::Array{Type}
 end
-const SLOT_RULE = SlotRule(Array{Type}(256))
+const SLOT_RULE = SlotRule(Vector{Type}(256))
 
 getindex(collection::SlotRule, key::Char) = collection.rules[Int(key)]
 setindex!(collection::SlotRule, value::Type, key::Char) = collection.rules[Int(key)] = value

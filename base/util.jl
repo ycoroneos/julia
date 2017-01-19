@@ -545,7 +545,7 @@ if is_windows()
 function getpass(prompt::AbstractString)
     print(prompt)
     flush(STDOUT)
-    p = Array{UInt8}(128) # mimic Unix getpass in ignoring more than 128-char passwords
+    p = Vector{UInt8}(128) # mimic Unix getpass in ignoring more than 128-char passwords
                           # (also avoids any potential memory copies arising from push!)
     try
         plen = 0
@@ -595,7 +595,7 @@ if is_windows()
     function winprompt(message, caption, default_username; prompt_username = true)
         # Step 1: Create an encrypted username/password bundle that will be used to set
         #         the default username (in theory could also provide a default password)
-        credbuf = Array{UInt8,1}(1024)
+        credbuf = Vector{UInt8}(1024)
         credbufsize = Ref{UInt32}(sizeof(credbuf))
         succeeded = ccall((:CredPackAuthenticationBufferW, "credui.dll"), stdcall, Bool,
             (UInt32, Cwstring, Cwstring, Ptr{UInt8}, Ptr{UInt32}),
@@ -631,12 +631,12 @@ if is_windows()
         end
 
         # Step 3: Convert encrypted credentials back to plain text
-        passbuf = Array{UInt16,1}(1024)
+        passbuf = Vector{UInt16}(1024)
         passlen = Ref{UInt32}(length(passbuf))
-        usernamebuf = Array{UInt16,1}(1024)
+        usernamebuf = Vector{UInt16}(1024)
         usernamelen = Ref{UInt32}(length(usernamebuf))
         # Need valid buffers for domain, even though we don't care
-        dummybuf = Array{UInt16,1}(1024)
+        dummybuf = Vector{UInt16}(1024)
         succeeded = ccall((:CredUnPackAuthenticationBufferW, "credui.dll"), Bool,
             (UInt32, Ptr{Void}, UInt32, Ptr{UInt16}, Ptr{UInt32}, Ptr{UInt16}, Ptr{UInt32}, Ptr{UInt16}, Ptr{UInt32}),
             0, outbuf_data[], outbuf_size[], usernamebuf, usernamelen, dummybuf, Ref{UInt32}(1024), passbuf, passlen)

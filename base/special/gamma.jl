@@ -11,14 +11,14 @@ Compute the gamma function of `x`.
 gamma(x::Real) = gamma(float(x))
 
 function lgamma_r(x::Float64)
-    signp = Array{Int32}(1)
-    y = ccall((:lgamma_r,libm),  Float64, (Float64, Ptr{Int32}), x, signp)
-    return y, signp[1]
+    signp = Ref{Int32}()
+    y = ccall((:lgamma_r,libm),  Float64, (Float64, Ref{Int32}), x, signp)
+    return y, signp[]
 end
 function lgamma_r(x::Float32)
-    signp = Array{Int32}(1)
-    y = ccall((:lgammaf_r,libm),  Float32, (Float32, Ptr{Int32}), x, signp)
-    return y, signp[1]
+    signp = Ref{Int32}(1)
+    y = ccall((:lgammaf_r,libm),  Float32, (Float32, Ref{Int32}), x, signp)
+    return y, signp[]
 end
 lgamma_r(x::Real) = lgamma_r(float(x))
 lgamma_r(x::Number) = lgamma(x), 1 # lgamma does not take abs for non-real x
@@ -224,13 +224,13 @@ function cotderiv_q(m::Int)
     q₋ = cotderiv_q(m-1)
     d = length(q₋) - 1 # degree of q₋
     if isodd(m-1)
-        q = Array{Float64}(length(q₋))
+        q = Vector{Float64}(length(q₋))
         q[end] = d * q₋[end] * 2/m
         for i = 1:length(q)-1
             q[i] = ((i-1)*q₋[i] + i*q₋[i+1]) * 2/m
         end
     else # iseven(m-1)
-        q = Array{Float64}(length(q₋) + 1)
+        q = Vector{Float64}(length(q₋) + 1)
         q[1] = q₋[1] / m
         q[end] = (1 + 2d) * q₋[end] / m
         for i = 2:length(q)-1

@@ -33,7 +33,7 @@ if is_windows()
     immutable RandomDevice <: AbstractRNG
         buffer::Vector{UInt128}
 
-        RandomDevice() = new(Array{UInt128}(1))
+        RandomDevice() = new(Vector{UInt128}(1))
     end
 
     function rand{T<:Union{Bool, Base.BitInteger}}(rd::RandomDevice, ::Type{T})
@@ -214,7 +214,7 @@ function make_seed(n::Integer)
 end
 
 function make_seed(filename::AbstractString, n::Integer)
-    read!(filename, Array{UInt32}(Int(n)))
+    read!(filename, Vector{UInt32}(Int(n)))
 end
 
 ## srand()
@@ -575,7 +575,7 @@ else
         limbs::Vector{Limb}   # buffer to be copied into generated BigInt's
         mask::Limb            # applied to the highest limb
 
-        RangeGeneratorBigInt(a, m, nlimbs, mask) = new(a, m, Array{Limb}(nlimbs), mask)
+        RangeGeneratorBigInt(a, m, nlimbs, mask) = new(a, m, Vector{Limb}(nlimbs), mask)
     end
 end
 
@@ -1380,7 +1380,7 @@ end
 
 function Base.repr(u::UUID)
     u = u.value
-    a = Array{UInt8}(36)
+    a = Vector{UInt8}(36)
     for i = [36:-1:25; 23:-1:20; 18:-1:15; 13:-1:10; 8:-1:1]
         d = u & 0xf
         a[i] = '0'+d+39*(d>9)
@@ -1505,7 +1505,7 @@ To randomly permute a arbitrary vector, see [`shuffle`](@ref)
 or [`shuffle!`](@ref).
 """
 function randperm(r::AbstractRNG, n::Integer)
-    a = Array{typeof(n)}(n)
+    a = Vector{typeof(n)}(n)
     @assert n <= Int64(2)^52
     if n == 0
        return a
@@ -1531,7 +1531,7 @@ Construct a random cyclic permutation of length `n`. The optional `rng`
 argument specifies a random number generator, see [Random Numbers](@ref).
 """
 function randcycle(r::AbstractRNG, n::Integer)
-    a = Array{typeof(n)}(n)
+    a = Vector{typeof(n)}(n)
     n == 0 && return a
     @assert n <= Int64(2)^52
     a[1] = 1

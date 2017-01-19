@@ -34,7 +34,7 @@ export
 Get the current working directory.
 """
 function pwd()
-    b = Array{UInt8}(1024)
+    b = Vector{UInt8}(1024)
     len = Ref{Csize_t}(length(b))
     uv_error(:getcwd, ccall(:uv_cwd, Cint, (Ptr{UInt8}, Ptr{Csize_t}), b, len))
     String(b[1:len[]])
@@ -253,7 +253,7 @@ end
 if is_windows()
 
 function tempdir()
-    temppath = Array{UInt16}(32767)
+    temppath = Vector{UInt16}(32767)
     lentemppath = ccall(:GetTempPathW,stdcall,UInt32,(UInt32,Ptr{UInt16}),length(temppath),temppath)
     if lentemppath >= length(temppath) || lentemppath == 0
         error("GetTempPath failed: $(Libc.FormatMessage())")
@@ -265,7 +265,7 @@ tempname(uunique::UInt32=UInt32(0)) = tempname(tempdir(), uunique)
 const temp_prefix = cwstring("jl_")
 function tempname(temppath::AbstractString,uunique::UInt32)
     tempp = cwstring(temppath)
-    tname = Array{UInt16}(32767)
+    tname = Vector{UInt16}(32767)
     uunique = ccall(:GetTempFileNameW,stdcall,UInt32,(Ptr{UInt16},Ptr{UInt16},UInt32,Ptr{UInt16}), tempp,temp_prefix,uunique,tname)
     lentname = findfirst(tname,0)-1
     if uunique == 0 || lentname <= 0
@@ -459,8 +459,8 @@ function walkdir(root; topdown=true, follow_symlinks=false, onerror=throw)
         close(chnl)
         return chnl
     end
-    dirs = Array{eltype(content)}(0)
-    files = Array{eltype(content)}(0)
+    dirs = Vector{eltype(content)}(0)
+    files = Vector{eltype(content)}(0)
     for name in content
         if isdir(joinpath(root, name))
             push!(dirs, name)
