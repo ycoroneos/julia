@@ -1352,19 +1352,8 @@ static Value *emit_arraysize_for_unsafe_dim(const jl_cgval_t &tinfo, jl_value_t 
 static Value *emit_array_nd_index(const jl_cgval_t &ainfo, jl_value_t *ex, ssize_t nd, jl_value_t **args,
                                   size_t nidxs, jl_codectx_t *ctx)
 {
-    Value *a = boxed(ainfo, ctx);
     Value *i = ConstantInt::get(T_size, 0);
     Value *stride = ConstantInt::get(T_size, 1);
-#if CHECK_BOUNDS==1
-    bool bc = (!ctx->is_inbounds &&
-               jl_options.check_bounds != JL_OPTIONS_CHECK_BOUNDS_OFF) ||
-        jl_options.check_bounds == JL_OPTIONS_CHECK_BOUNDS_ON;
-    BasicBlock *failBB=NULL, *endBB=NULL;
-    if (bc) {
-        failBB = BasicBlock::Create(jl_LLVMContext, "oob");
-        endBB = BasicBlock::Create(jl_LLVMContext, "idxend");
-    }
-#endif
     Value **idxs = (Value**)alloca(sizeof(Value*)*nidxs);
     for(size_t k=0; k < nidxs; k++) {
         idxs[k] = emit_unbox(T_size, emit_expr(args[k], ctx), NULL);
@@ -1376,77 +1365,9 @@ static Value *emit_array_nd_index(const jl_cgval_t &ainfo, jl_value_t *ex, ssize
         if (k < nidxs-1) {
             assert(nd >= 0);
             Value *d = emit_arraysize_for_unsafe_dim(ainfo, ex, k+1, nd, ctx);
-#if CHECK_BOUNDS==1
-            if (bc) {
-                BasicBlock *okBB = BasicBlock::Create(jl_LLVMContext, "ib");
-                // if !(i < d) goto error
-                builder.CreateCondBr(builder.CreateICmpULT(ii, d), okBB, failBB);
-                ctx->f->getBasicBlockList().push_back(okBB);
-                builder.SetInsertPoint(okBB);
-            }
-#endif
             stride = builder.CreateMul(stride, d);
         }
     }
-#if CHECK_BOUNDS==1
-    if (bc) {
-        // We have already emitted a bounds check for each index except for
-        // the last one which we therefore have to do here.
-        bool linear_indexing = nd == -1 || nidxs < (size_t)nd;
-        if (linear_indexing) {
-            // Compare the linearized index `i` against the linearized size of
-            // the accessed array, i.e. `if !(i < alen) goto error`.
-            if (nidxs > 1) {
-                // TODO: REMOVE DEPWARN AND RETURN FALSE AFTER 0.6.
-                // We need to check if this is inside the non-linearized size
-                BasicBlock *partidx = BasicBlock::Create(jl_LLVMContext, "partlinidx");
-                BasicBlock *partidxwarn = BasicBlock::Create(jl_LLVMContext, "partlinidxwarn");
-                Value *d = emit_arraysize_for_unsafe_dim(ainfo, ex, nidxs, nd, ctx);
-                builder.CreateCondBr(builder.CreateICmpULT(ii, d), endBB, partidx);
-
-                // We failed the normal bounds check; check to see if we're
-                // inside the linearized size (partial linear indexing):
-                ctx->f->getBasicBlockList().push_back(partidx);
-                builder.SetInsertPoint(partidx);
-                Value *alen = emit_arraylen(ainfo, ex, ctx);
-                builder.CreateCondBr(builder.CreateICmpULT(i, alen), partidxwarn, failBB);
-
-                // We passed the linearized bounds check; now throw the depwarn:
-                ctx->f->getBasicBlockList().push_back(partidxwarn);
-                builder.SetInsertPoint(partidxwarn);
-                builder.CreateCall(prepare_call(jldepwarnpi_func), ConstantInt::get(T_size, nidxs));
-                builder.CreateBr(endBB);
-            } else {
-                Value *alen = emit_arraylen(ainfo, ex, ctx);
-                builder.CreateCondBr(builder.CreateICmpULT(i, alen), endBB, failBB);
-            }
-        } else {
-            // Compare the last index of the access against the last dimension of
-            // the accessed array, i.e. `if !(last_index < last_dimension) goto error`.
-            assert(nd >= 0);
-            Value *last_index = ii;
-            Value *last_dimension = emit_arraysize_for_unsafe_dim(ainfo, ex, nidxs, nd, ctx);
-            builder.CreateCondBr(builder.CreateICmpULT(last_index, last_dimension), endBB, failBB);
-        }
-
-        ctx->f->getBasicBlockList().push_back(failBB);
-        builder.SetInsertPoint(failBB);
-        // CreateAlloca is OK here since we are on an error branch
-        Value *tmp = builder.CreateAlloca(T_size, ConstantInt::get(T_size, nidxs));
-        for(size_t k=0; k < nidxs; k++) {
-            builder.CreateStore(idxs[k], builder.CreateGEP(tmp, ConstantInt::get(T_size, k)));
-        }
-#if JL_LLVM_VERSION >= 30700
-        builder.CreateCall(prepare_call(jlboundserrorv_func), { a, tmp, ConstantInt::get(T_size, nidxs) });
-#else
-        builder.CreateCall3(prepare_call(jlboundserrorv_func), a, tmp, ConstantInt::get(T_size, nidxs));
-#endif
-        builder.CreateUnreachable();
-
-        ctx->f->getBasicBlockList().push_back(endBB);
-        builder.SetInsertPoint(endBB);
-    }
-#endif
 
     return i;
 }

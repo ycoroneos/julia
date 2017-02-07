@@ -468,11 +468,40 @@ start(A::Array) = 1
 next(a::Array,i) = (@_propagate_inbounds_meta; (a[i],i+1))
 done(a::Array,i) = (@_inline_meta; i == length(a)+1)
 
+## Boundscheck micro-optimization: Avoid calling max(0,sz) within OneTo's constructor
+checkbounds(::Type{Bool}, A::Array, i::Int) = (i-1) % UInt < length(A) % UInt
+checkbounds(::Type{Bool}, A::Array, i::Int, I::Int...) = (@_inline_meta; _checkarrayindex(size(A), i, I...))
+_checkarrayindex(::Tuple{}, i, I...) = (@_inline_meta; (i == 1) & _checkarrayindex((), I...))
+_checkarrayindex(sz::Tuple{Int}, i, I...) = (@_inline_meta; ((i-1) % UInt < sz[1] % UInt) & _checkarrayindex(tail(sz), I...))
+_checkarrayindex(sz::Tuple{Int, Vararg{Int}}, i, I...) = (@_inline_meta; ((i-1) % UInt < sz[1] % UInt) & _checkarrayindex(tail(sz), I...))
+_checkarrayindex(::Tuple{}, i) = (i == 1)
+_checkarrayindex(sz::Tuple{Int}, i) = (i-1) % UInt < sz[1] % UInt
+function _checkarrayindex(sz::Tuple{Int, Vararg{Int}}, i)
+    @_inline_meta
+    if (i-1) % UInt < sz[1] % UInt
+        return true
+    elseif (i-1) % UInt < prod(sz) % UInt
+        partial_linear_indexing_warning_lookup(length(sz))
+        return true
+    end
+    return false
+end
+
 ## Indexing: getindex ##
 
 # This is more complicated than it needs to be in order to get Win64 through bootstrap
-getindex(A::Array, i1::Int) = arrayref(A, i1)
-getindex(A::Array, i1::Int, i2::Int, I::Int...) = (@_inline_meta; arrayref(A, i1, i2, I...)) # TODO: REMOVE FOR #14770
+function getindex(A::Array, i1::Int)
+    @_inline_meta
+    @boundscheck checkbounds(A, i1)
+    @inbounds r = arrayref(A, i1)
+    r
+end
+function getindex(A::Array, i1::Int, i2::Int, I::Int...)
+    @_inline_meta
+    @boundscheck checkbounds(A, i1, i2, I...)
+    @inbounds r = arrayref(A, i1, i2, I...)
+    r
+end
 
 # Faster contiguous indexing using copy! for UnitRange and Colon
 function getindex(A::Array, I::UnitRange{Int})
@@ -500,8 +529,18 @@ function getindex{S}(A::Array{S}, I::Range{Int})
 end
 
 ## Indexing: setindex! ##
-setindex!{T}(A::Array{T}, x, i1::Int) = arrayset(A, convert(T,x)::T, i1)
-setindex!{T}(A::Array{T}, x, i1::Int, i2::Int, I::Int...) = (@_inline_meta; arrayset(A, convert(T,x)::T, i1, i2, I...)) # TODO: REMOVE FOR #14770
+function setindex!{T}(A::Array{T}, x, i1::Int)
+    @_inline_meta
+    @boundscheck checkbounds(A, i1)
+    @inbounds r = arrayset(A, convert(T,x)::T, i1)
+    r
+end
+function setindex!{T}(A::Array{T}, x, i1::Int, i2::Int, I::Int...)
+    @_inline_meta
+    @boundscheck checkbounds(A, i1, i2, I...)
+    @inbounds r = arrayset(A, convert(T,x)::T, i1, i2, I...)
+    r
+end
 
 # These are redundant with the abstract fallbacks but needed for bootstrap
 function setindex!(A::Array, x, I::AbstractVector{Int})

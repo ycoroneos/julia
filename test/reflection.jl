@@ -418,12 +418,12 @@ function test_typed_ast_printing(f::ANY, types::ANY, must_used_vars)
         for i in 1:length(src.slotnames)
             name = src.slotnames[i]
             if name in dupnames
-                @test contains(str, "_$i")
+                @test ismatch(Regex("_$i\\D"), str)
                 if name in must_used_vars
                     global used_dup_var_tested15714 = true
                 end
             else
-                @test !contains(str, "_$i")
+                @test !ismatch(Regex("_$i\\D"), str)
                 if name in must_used_vars
                     global used_unique_var_tested15714 = true
                 end

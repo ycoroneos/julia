@@ -122,6 +122,7 @@ julia> length(A)
 """
 length(t::AbstractArray) = (@_inline_meta; prod(size(t)))
 _length(A::AbstractArray) = (@_inline_meta; prod(map(unsafe_length, indices(A)))) # circumvent missing size
+_length(A::Array) = (@_inline_meta; length(A))
 _length(A) = (@_inline_meta; length(A))
 endof(a::AbstractArray) = (@_inline_meta; length(a))
 first(a::AbstractArray) = a[first(eachindex(a))]
@@ -324,7 +325,7 @@ Throw an error if the specified indices `I` are not in bounds for the given arra
 """
 function checkbounds(A::AbstractArray, I...)
     @_inline_meta
-    checkbounds(Bool, A, I...) || throw_boundserror(A, I)
+    checkbounds(Bool, A, I...) || throw_boundserror(A, I...)
     nothing
 end
 checkbounds(A::AbstractArray) = checkbounds(A, 1) # 0-d case
@@ -381,7 +382,13 @@ function checkbounds_linear_indices(::Type{Bool}, IA::Tuple, i::Union{Slice,Colo
 end
 checkbounds_indices(::Type{Bool}, ::Tuple, ::Tuple{}) = true
 
-throw_boundserror(A, I) = (@_noinline_meta; throw(BoundsError(A, I)))
+# Avoiding spurious allocations, GC frames, or extra work is tricky here
+# We must use `@noinline` to prevent the GC frame from allocating the BoundsError
+# But then we must define methods with discrete arguments to get call-site specialization
+throw_boundserror(A, I...)   = (@_noinline_meta; throw(BoundsError(A, I)))
+throw_boundserror(A, i1)     = (@_noinline_meta; throw(BoundsError(A, (i1,))))
+throw_boundserror(A, i1, i2) = (@_noinline_meta; throw(BoundsError(A, (i1, i2))))
+# More methods are defined programmatically in multidimensional.jl
 
 # check along a single dimension
 """
@@ -402,6 +409,7 @@ false
 """
 checkindex(::Type{Bool}, inds::AbstractUnitRange, i) = throw(ArgumentError("unable to check bounds for indices of type $(typeof(i))"))
 checkindex(::Type{Bool}, inds::AbstractUnitRange, i::Real) = (first(inds) <= i) & (i <= last(inds))
+checkindex(::Type{Bool}, inds::OneTo{Int}, i::Integer) = (Int(i)-1) % UInt < last(inds) % UInt
 checkindex(::Type{Bool}, inds::AbstractUnitRange, ::Colon) = true
 checkindex(::Type{Bool}, inds::AbstractUnitRange, ::Slice) = true
 function checkindex(::Type{Bool}, inds::AbstractUnitRange, r::Range)
