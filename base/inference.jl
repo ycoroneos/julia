@@ -4028,8 +4028,12 @@ function inline_worthy(body::Expr, cost::Integer=1000) # precondition: 0 < cost;
     end
     symlim = 1000 + 5_000_000 ÷ cost
     nstmt = 0
+    bc_depth = 0
     for stmt in body.args
-        if !(isa(stmt, SSAValue) || inline_ignore(stmt))
+        if stmt isa Expr && stmt.head == :boundscheck
+            bc_depth = bc_depth + (stmt.args[1]==true ? 1 : -1)
+        end
+        if !(isa(stmt, SSAValue) || inline_ignore(stmt) || bc_depth > 0)
             nstmt += 1
         end
     end
@@ -4605,12 +4609,12 @@ function meta_elim_pass!(code::Array{Any,1}, propagate_inbounds::Bool, do_covera
                 else
                     void_boundscheck_depth -= 1
                 end
-                code[i] = nothing
+                # code[i] = nothing
             elseif args[1] === :pop
                 # This will also delete pops that don't match
                 if (isempty(bounds_elim_stack) ? true :
                     pop!(bounds_elim_stack))
-                    code[i] = nothing
+                    # code[i] = nothing
                     continue
                 end
                 push_idx = bounds_push_pos_stack[end]
@@ -4618,19 +4622,19 @@ function meta_elim_pass!(code::Array{Any,1}, propagate_inbounds::Bool, do_covera
                     pop!(bounds_push_pos_stack)
                 end
                 if push_idx > 0
-                    code[push_idx] = nothing
-                    code[i] = nothing
+                    # code[push_idx] = nothing
+                    # code[i] = nothing
                 else
                     bounds_push_pos_stack[end] = 0
                 end
             elseif is_inbounds
-                code[i] = nothing
+                # code[i] = nothing
                 push!(bounds_elim_stack, true)
                 enabled = false
             elseif check_bounds == 1 || length(inbounds_stack) >= 2
                 # Not inbounds and at least two levels deep, this will never
                 # be eliminated when inlined to another function.
-                code[i] = nothing
+                # code[i] = nothing
                 push!(bounds_elim_stack, true)
             else
                 push!(bounds_elim_stack, false)

@@ -493,14 +493,12 @@ end
 function getindex(A::Array, i1::Int)
     @_inline_meta
     @boundscheck checkbounds(A, i1)
-    @inbounds r = arrayref(A, i1)
-    r
+    arrayref(A, i1)
 end
 function getindex(A::Array, i1::Int, i2::Int, I::Int...)
     @_inline_meta
     @boundscheck checkbounds(A, i1, i2, I...)
-    @inbounds r = arrayref(A, i1, i2, I...)
-    r
+    arrayref(A, i1, i2, I...)
 end
 
 # Faster contiguous indexing using copy! for UnitRange and Colon
@@ -532,14 +530,12 @@ end
 function setindex!{T}(A::Array{T}, x, i1::Int)
     @_inline_meta
     @boundscheck checkbounds(A, i1)
-    @inbounds r = arrayset(A, convert(T,x)::T, i1)
-    r
+    arrayset(A, convert(T,x)::T, i1)
 end
 function setindex!{T}(A::Array{T}, x, i1::Int, i2::Int, I::Int...)
     @_inline_meta
     @boundscheck checkbounds(A, i1, i2, I...)
-    @inbounds r = arrayset(A, convert(T,x)::T, i1, i2, I...)
-    r
+    arrayset(A, convert(T,x)::T, i1, i2, I...)
 end
 
 # These are redundant with the abstract fallbacks but needed for bootstrap
