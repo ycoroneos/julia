@@ -129,6 +129,9 @@ typedef struct {
 static jl_value_t *jl_idtable_type = NULL;
 static arraylist_t builtin_typenames;
 
+// put a '\0' after symbol names; useful for running `strings`
+//#define NUL_TERMINATE_SYMBOL_NAMES
+
 #define write_uint8(s, n) ios_putc((n), (s))
 #define read_uint8(s) ((uint8_t)ios_getc(s))
 #define write_int8(s, n) write_uint8(s, n)
@@ -816,6 +819,9 @@ static void jl_serialize_value_(jl_serializer_state *s, jl_value_t *v)
             write_int32(s->s, l);
         }
         ios_write(s->s, jl_symbol_name((jl_sym_t*)v), l);
+#ifdef NUL_TERMINATE_SYMBOL_NAMES
+        write_uint8(s->s, 0);
+#endif
     }
     else if (jl_is_globalref(v)) {
         if (s->mode == MODE_AST && jl_globalref_mod(v) == s->tree_enclosing_module) {
@@ -1546,6 +1552,9 @@ static jl_value_t *jl_deserialize_value_symbol(jl_serializer_state *s, jl_value_
         len = read_int32(s->s);
     char *name = (char*)(len >= 256 ? malloc(len + 1) : alloca(len + 1));
     ios_read(s->s, name, len);
+#ifdef NUL_TERMINATE_SYMBOL_NAMES
+    (void)read_uint8(s->s);
+#endif
     name[len] = '\0';
     jl_value_t *sym = (jl_value_t*)jl_symbol(name);
     if (len >= 256)

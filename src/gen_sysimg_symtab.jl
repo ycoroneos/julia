@@ -3,7 +3,7 @@
 # script to generate tables of common symbols from a system image
 # steps to rerun this:
 #   1. empty the contents of common_symbols*.inc
-#   2. modify dump.c to write and read a '\0' after every symbol name
+#   2. modify dump.c to write and read a '\0' after every symbol name (#define NUL_TERMINATE_SYMBOL_NAMES)
 #   3. build sys.ji
 #   4. cd src && ../julia gen_sysimg_symtab.jl ../usr/lib/julia/sys.ji
 
@@ -13,6 +13,12 @@ io,_ = open(pipeline(`strings -n 3 $fname`,
                      `tr -d "() \t+-"`,
                      `grep -v '^$'`,  # rm empty lines
                      `grep -v '\\'`,  # avoid backslashes
+                     `grep -v '\"'`,  # avoid quotes
+                     `grep -v '%!'`,  # some other problematic sequences
+                     `grep -v ';'`,
+                     `grep -v '$!'`,
+                     `grep -v '!M'`,
+                     `grep -v '!!'`,
                      `sort`, `uniq -c`, `sort -g -r`,
                      `head -n 315`))  # 63 + 252
 
@@ -23,5 +29,5 @@ end
 
 lines = eachline(io)
 
-open(f->foreach(l->outputline(f,l), take(lines,63)), "common_symbols1.inc", "w")
+open(f->foreach(l->outputline(f,l), Base.Iterators.take(lines,63)), "common_symbols1.inc", "w")
 open(f->foreach(l->outputline(f,l), lines), "common_symbols2.inc", "w")
