@@ -698,7 +698,7 @@ for op in ["+", "-", "\$", "|", ".+", ".-", "*", ".*"]
 end
 
 # issue #17701
-@test expand(:(i==3 && i+=1)) == Expr(:error, "invalid assignment location \"==(i,3)&&i\"")
+@test expand(:(i==3 && i+=1)) == Expr(:error, "invalid assignment location \"==(i,3) && i\"")
 
 # issue #18667
 @test expand(:(true = 1)) == Expr(:error, "invalid assignment location \"true\"")
