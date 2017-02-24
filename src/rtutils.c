@@ -529,12 +529,17 @@ static size_t jl_static_show_x_(JL_STREAM *out, jl_value_t *v, jl_datatype_t *vt
     else if (vt == jl_datatype_type) {
         jl_datatype_t *dv = (jl_datatype_t*)v;
         jl_sym_t *globname = dv->name->mt != NULL ? dv->name->mt->name : NULL;
-        int globfunc = globname && jl_get_global(dv->name->module, globname) &&
-            jl_typeof(jl_get_global(dv->name->module, globname)) == v &&
-            !strchr(jl_symbol_name(globname),'#');
+        int globfunc = 0;
+        if (globname && !strchr(jl_symbol_name(globname), '#') &&
+            !strchr(jl_symbol_name(globname), '@') &&
+            jl_binding_resolved_p(dv->name->module, globname)) {
+            jl_binding_t *b = jl_get_binding(dv->name->module, globname);
+            if (b && jl_typeof(b->value) == v)
+                globfunc = 1;
+        }
         jl_sym_t *sym = globfunc ? globname : dv->name->name;
         char *sn = jl_symbol_name(sym);
-        int hidden = !globfunc && strchr(sn,'#');
+        int hidden = !globfunc && strchr(sn, '#');
         size_t i = 0;
         int quote = 0;
         if (hidden) {
@@ -547,7 +552,7 @@ static size_t jl_static_show_x_(JL_STREAM *out, jl_value_t *v, jl_datatype_t *vt
             n += jl_static_show_x(out, (jl_value_t*)dv->name->module, depth);
             if (!hidden) {
                 n += jl_printf(out, ".");
-                if (globfunc && !jl_id_start_char(u8_nextchar(sn,&i))) {
+                if (globfunc && !jl_id_start_char(u8_nextchar(sn, &i))) {
                     n += jl_printf(out, ":(");
                     quote = 1;
                 }
@@ -701,7 +706,8 @@ static size_t jl_static_show_x_(JL_STREAM *out, jl_value_t *v, jl_datatype_t *vt
     }
     else if (vt == jl_sym_type) {
         char *sn = jl_symbol_name((jl_sym_t*)v);
-        int quoted = !!strchr(sn,'/');  // TODO check for valid identifier
+        // TODO check for valid identifier
+        int quoted = strchr(sn,'/') && strcmp(sn,"/") && strcmp(sn,"//") && strcmp(sn,"//=");
         if (quoted)
             n += jl_printf(out, "Symbol(\"");
         else
