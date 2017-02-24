@@ -481,6 +481,8 @@ struct recur_list {
 
 static size_t jl_static_show_x(JL_STREAM *out, jl_value_t *v, struct recur_list *depth);
 
+JL_DLLEXPORT int jl_id_start_char(uint32_t wc);
+
 // `v` might be pointing to a field inlined in a structure therefore
 // `jl_typeof(v)` may not be the same with `vt` and only `vt` should be
 // used to determine the type of the value.
@@ -526,11 +528,44 @@ static size_t jl_static_show_x_(JL_STREAM *out, jl_value_t *v, jl_datatype_t *vt
     }
     else if (vt == jl_datatype_type) {
         jl_datatype_t *dv = (jl_datatype_t*)v;
-        if (dv->name->module != jl_core_module) {
-            n += jl_static_show_x(out, (jl_value_t*)dv->name->module, depth);
-            n += jl_printf(out, ".");
+        jl_sym_t *globname = dv->name->mt != NULL ? dv->name->mt->name : NULL;
+        int globfunc = globname && jl_get_global(dv->name->module, globname) &&
+            jl_typeof(jl_get_global(dv->name->module, globname)) == v &&
+            !strchr(jl_symbol_name(globname),'#');
+        jl_sym_t *sym = globfunc ? globname : dv->name->name;
+        char *sn = jl_symbol_name(sym);
+        int hidden = !globfunc && strchr(sn,'#');
+        size_t i = 0;
+        int quote = 0;
+        if (hidden) {
+            n += jl_printf(out, "getfield(");
         }
-        n += jl_printf(out, "%s", jl_symbol_name(dv->name->name));
+        else if (globfunc) {
+            n += jl_printf(out, "typeof(");
+        }
+        if (dv->name->module != jl_core_module || !jl_module_exports_p(jl_core_module, sym)) {
+            n += jl_static_show_x(out, (jl_value_t*)dv->name->module, depth);
+            if (!hidden) {
+                n += jl_printf(out, ".");
+                if (globfunc && !jl_id_start_char(u8_nextchar(sn,&i))) {
+                    n += jl_printf(out, ":(");
+                    quote = 1;
+                }
+            }
+        }
+        if (hidden) {
+            n += jl_printf(out, ", Symbol(\"");
+            n += jl_printf(out, "%s", sn);
+            n += jl_printf(out, "\"))");
+        }
+        else {
+            n += jl_printf(out, "%s", sn);
+            if (globfunc) {
+                n += jl_printf(out, ")");
+                if (quote)
+                    n += jl_printf(out, ")");
+            }
+        }
         if (dv->parameters && (jl_value_t*)dv != dv->name->wrapper &&
             (jl_has_free_typevars(v) ||
              (jl_value_t*)dv != (jl_value_t*)jl_tuple_type)) {
@@ -602,6 +637,9 @@ static size_t jl_static_show_x_(JL_STREAM *out, jl_value_t *v, jl_datatype_t *vt
         jl_uv_puts(out, jl_string_data(v), jl_string_len(v)); n += jl_string_len(v);
         n += jl_printf(out, "\"");
     }
+    else if (v == jl_bottom_type) {
+        n += jl_printf(out, "Union{}");
+    }
     else if (vt == jl_uniontype_type) {
         n += jl_printf(out, "Union{");
         while (jl_is_uniontype(v)) {
@@ -662,7 +700,15 @@ static size_t jl_static_show_x_(JL_STREAM *out, jl_value_t *v, jl_datatype_t *vt
         n += jl_printf(out, "%s", jl_symbol_name(m->name));
     }
     else if (vt == jl_sym_type) {
-        n += jl_printf(out, ":%s", jl_symbol_name((jl_sym_t*)v));
+        char *sn = jl_symbol_name((jl_sym_t*)v);
+        int quoted = !!strchr(sn,'/');  // TODO check for valid identifier
+        if (quoted)
+            n += jl_printf(out, "Symbol(\"");
+        else
+            n += jl_printf(out, ":");
+        n += jl_printf(out, "%s", sn);
+        if (quoted)
+            n += jl_printf(out, "\")");
     }
     else if (vt == jl_ssavalue_type) {
         n += jl_printf(out, "SSAValue(%" PRIuPTR ")",
