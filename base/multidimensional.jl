@@ -1263,11 +1263,11 @@ end
 hash(x::Prehashed) = x.hash
 
 """
-    unique(itr[, dim])
+    unique(A::AbstractArray[, dim::Int])
 
-Returns an array containing only the unique elements of the iterable `itr`, in
-the order that the first of each set of equivalent elements originally appears.
-If `dim` is specified, returns unique regions of the array `itr` along `dim`.
+Return an array containing only the unique elements of array `A`, as determined by
+[`isequal`](@ref). If `dim` is specified, returns unique regions of `A` along
+dimension `dim`.
 
 ```jldoctest
 julia> A = map(isodd, reshape(collect(1:8), (2,2,2)))

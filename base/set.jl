@@ -112,7 +112,7 @@ const ⊆ = issubset
 """
     unique(itr)
 
-Returns an array containing one value from `itr` for each unique value,
+Return an array containing one value from `itr` for each unique value,
 as determined by [`isequal`](@ref).
 
 ```jldoctest
