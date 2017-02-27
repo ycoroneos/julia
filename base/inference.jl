@@ -1910,8 +1910,12 @@ function abstract_eval(e::ANY, vtypes::VarTable, sv::InferenceState)
         if isdefined(sv.linfo, :def)
             spsig = sv.linfo.def.sig
             if isa(spsig, UnionAll)
-                env = data_pointer_from_objref(sv.linfo.sparam_vals) + sizeof(Ptr{Void})
-                rt = ccall(:jl_instantiate_type_in_env, Any, (Any, Any, Ptr{Any}), e.args[2], spsig, env)
+                if !isempty(sv.linfo.sparam_vals)
+                    env = data_pointer_from_objref(sv.linfo.sparam_vals) + sizeof(Ptr{Void})
+                    rt = ccall(:jl_instantiate_type_in_env, Any, (Any, Any, Ptr{Any}), e.args[2], spsig, env)
+                else
+                    rt = rewrap_unionall(e.args[2], spsig)
+                end
             end
         end
         abstract_eval(e.args[1], vtypes, sv)
@@ -3272,6 +3276,7 @@ function substitute!(e::ANY, na::Int, argexprs::Vector{Any}, spsig::ANY, spvals:
         if head === :static_parameter
             return spvals[e.args[1]]
         elseif head === :foreigncall
+            @assert !isa(spsig,UnionAll) || !isempty(spvals)
             for i = 1:length(e.args)
                 if i == 2
                     e.args[2] = ccall(:jl_instantiate_type_in_env, Any, (Any, Any, Ptr{Any}), e.args[2], spsig, spvals)
