@@ -484,7 +484,7 @@ function cat(repo::GitRepo, spec)
     end
 end
 
-""" git rev-list --count <commit1> <commit2> """
+""" git rev-list --left-right --count <commit1> <commit2> """
 function revcount(repo::GitRepo, fst::AbstractString, snd::AbstractString)
     fst_id = revparseid(repo, fst)
     snd_id = revparseid(repo, snd)
