@@ -50,7 +50,7 @@ function arg_decl_parts(m::Method)
         sig = sig.body
     end
     if isdefined(m, :source)
-        src = m.source
+        src = uncompressed_ast(m, m.source)
     else
         src = nothing
     end
@@ -75,14 +75,14 @@ function kwarg_decl(m::Method, kwtype::DataType)
     kwli = ccall(:jl_methtable_lookup, Any, (Any, Any, UInt), kwtype.name.mt, sig, max_world(m))
     if kwli !== nothing
         kwli = kwli::Method
-        src = kwli.source
-        kws = filter(x->!('#' in string(x)), src.slotnames[kwli.nargs+1:end])
+        src = uncompressed_ast(kwli, kwli.source)
+        kws = filter(x -> !('#' in string(x)), src.slotnames[(kwli.nargs + 1):end])
         # ensure the kwarg... is always printed last. The order of the arguments are not
         # necessarily the same as defined in the function
         i = findfirst(x -> endswith(string(x), "..."), kws)
-        i==0 && return kws
+        i == 0 && return kws
         push!(kws, kws[i])
-        return deleteat!(kws,i)
+        return deleteat!(kws, i)
     end
     return ()
 end

@@ -1869,7 +1869,7 @@ void jl_init_types(void)
                                 jl_symbol("called"),
                                 jl_symbol("isva"),
                                 jl_symbol("isstaged"),
-                                jl_symbol("needs_sparam_vals_ducttape")),
+                                jl_symbol("pure")),
                         jl_svec(20,
                                 jl_sym_type,
                                 jl_module_type,
@@ -1881,7 +1881,7 @@ void jl_init_types(void)
                                 jl_any_type, // Union{Array, Void}
                                 jl_any_type, // TypeMap
                                 jl_simplevector_type,
-                                jl_code_info_type,
+                                jl_any_type,
                                 jl_any_type, // jl_method_instance_type
                                 jl_any_type, // jl_method_instance_type
                                 jl_array_any_type,
