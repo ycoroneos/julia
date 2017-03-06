@@ -484,7 +484,17 @@ function cat(repo::GitRepo, spec)
     end
 end
 
-""" git rev-list --left-right --count <commit1> <commit2> """
+"""
+    LibGit2.revcount(repo::GitRepo, fst::AbstractString, snd::AbstractString)
+
+List the number of revisions between `fst` and `snd` (committish OIDs in string form).
+Since `fst` and `snd` may be on different branches, `revcount` performs a "left-right"
+revision list (and count), returning a tuple of `Int`s - the number of left and right
+commits, respectively. A left (or right) commit refers to which side of a symmetric
+difference in a tree the commit is reachable from.
+
+Equivalent to `git rev-list --left-right --count <fst> <snd>`.
+"""
 function revcount(repo::GitRepo, fst::AbstractString, snd::AbstractString)
     fst_id = revparseid(repo, fst)
     snd_id = revparseid(repo, snd)
