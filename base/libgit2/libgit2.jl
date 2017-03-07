@@ -110,7 +110,7 @@ tracked files in the working tree (if `cached=false`) or the index (if `cached=t
 Equivalent to `git diff-index <treeish> [-- <pathspecs>]`.
 """
 function isdiff(repo::GitRepo, treeish::AbstractString, paths::AbstractString=""; cached::Bool=false)
-    tree = GitTree(repo, "$treeish^{tree}")
+    tree = peel(GitTree, repo, treeish)
     try
         diff = diff_tree(repo, tree, paths, cached=cached)
         result = count(diff) > 0
@@ -401,17 +401,16 @@ function checkout!(repo::GitRepo, commit::AbstractString = "";
     end
 
     # search for commit to get a commit object
-    obj = GitObject(repo, GitHash(commit))
-    peeled = peel(GitCommit, obj)
+    obj = peel(GitCommit, repo, commit)
 
     opts = force ? CheckoutOptions(checkout_strategy = Consts.CHECKOUT_FORCE) : CheckoutOptions()
     # detach commit
-    obj_oid = GitHash(peeled)
+    obj_oid = GitHash(obj)
     ref = GitReference(repo, obj_oid, force=force,
                        msg="libgit2.checkout: moving from $head_name to $(string(obj_oid))")
 
     # checkout commit
-    checkout_tree(repo, peeled, options = opts)
+    checkout_tree(repo, obj, options = opts)
 end
 
 """

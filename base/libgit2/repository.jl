@@ -240,6 +240,18 @@ end
 peel(obj::GitObject) = peel(GitObject, obj)
 
 
+"""
+    peel(T, repo::GitRepo, spec::Union{AbstractGitHash, AbstractString})
+
+Recursively peel the object in `repo` specified by `spec` until an object of type `T` is
+found.
+"""
+function peel{T<:GitObject}(::Type{T}, repo::GitRepo, spec::Union{AbstractGitHash, AbstractString})
+    with(GitUnknownObject, repo, spec) do unkobj
+        peel(T,unkobj)
+    end
+end
+
 function checkout_tree(repo::GitRepo, obj::GitObject;
                        options::CheckoutOptions = CheckoutOptions())
     @check ccall((:git_checkout_tree, :libgit2), Cint,
