@@ -87,7 +87,7 @@ $(BUILDDIR)/$(OPENBLAS_SRC_DIR)/openblas-freebsd.patch-applied: $(BUILDDIR)/$(OP
 	echo 1 > $@
 
 # Clang assembler bug workaround from https://github.com/xianyi/OpenBLAS/pull/982
-$(BUILDDIR)/$(OPENBLAS_SRC_DIR)/openblas-clangasmbug.patch-applied: $(BUILDDIR)/$(OPENBLAS_SRC_DIR)/openblas-freebsd.patch-applied
+$(BUILDDIR)/$(OPENBLAS_SRC_DIR)/openblas-clangasmbug.patch-applied:  $(BUILDDIR)/$(OPENBLAS_SRC_DIR)/openblas-freebsd.patch-applied
 	cd $(BUILDDIR)/$(OPENBLAS_SRC_DIR) && patch -p1 -f < $(SRCDIR)/patches/openblas-clangasmbug.patch
 	echo 1 > $@
 
@@ -97,7 +97,14 @@ $(BUILDDIR)/$(OPENBLAS_SRC_DIR)/openblas-cross-compile.patch-applied: $(BUILDDIR
 	cd $(BUILDDIR)/$(OPENBLAS_SRC_DIR) && patch -p1 -f < $(SRCDIR)/patches/openblas-cross-compile.patch
 	echo 1 > $@
 
+# If building the git version of OpenBLAS, don't include the above patches
+ifneq ($(DEPS_GIT), 1)
 $(BUILDDIR)/$(OPENBLAS_SRC_DIR)/build-configured: $(BUILDDIR)/$(OPENBLAS_SRC_DIR)/openblas-cross-compile.patch-applied
+else
+$(BUILDDIR)/$(OPENBLAS_SRC_DIR)/build-configured: $(BUILDDIR)/$(OPENBLAS_SRC_DIR)/source-extracted
+endif
+
+$(BUILDDIR)/$(OPENBLAS_SRC_DIR)/build-configured:
 	perl -i -ple 's/^\s*(EXTRALIB\s*\+=\s*-lSystemStubs)\s*$$/# $$1/g' $(dir $<)/Makefile.system
 	echo 1 > $@
 
