@@ -154,6 +154,21 @@ The keyword argument is:
 
 Returns only the *names* of the files which have changed, *not* their contents.
 
+# Example
+
+```julia
+LibGit2.branch!(repo, "branch/a")
+LibGit2.branch!(repo, "branch/b")
+# add a file to repo
+open(joinpath(LibGit2.path(repo),"file"),"w") do f
+    write(f, "hello repo\n")
+end
+LibGit2.add!(repo, "file")
+LibGit2.commit(repo, "add file")
+files = LibGit2.diff_files(repo, "branch/a", "branch/b", filter=Set([LibGit2.Consts.DELTA_ADDED])) # returns ["file"]
+files = LibGit2.diff_files(repo, "branch/a", "branch/b", filter=Set([LibGit2.Consts.DELTA_MODIFIED])) # returns [] because existing files weren't modified
+```
+
 Equivalent to `git diff --name-only --diff-filter=<filter> <branch1> <branch2>`.
 """
 function diff_files(repo::GitRepo, branch1::AbstractString, branch2::AbstractString;
