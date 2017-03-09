@@ -160,7 +160,7 @@ Returns only the *names* of the files which have changed, *not* their contents.
 LibGit2.branch!(repo, "branch/a")
 LibGit2.branch!(repo, "branch/b")
 # add a file to repo
-open(joinpath(LibGit2.path(repo),"file"),"w") do f
+open(joinpath(LibGit2.path(repo), "file"), "w") do f
     write(f, "hello repo\n")
 end
 LibGit2.add!(repo, "file")
