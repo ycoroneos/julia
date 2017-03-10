@@ -1283,4 +1283,10 @@ end
 # END 0.6 deprecations
 
 # BEGIN 1.0 deprecations
+function CartesianRange{N}(start::CartesianIndex{N}, stop::CartesianIndex{N})
+    inds = map((f,l)->f:l, start.I, stop.I)
+    depwarn("the internal representation of CartesianRange has changed, use CartesianRange($inds) (or other more approriate AbstractUnitRange type) instead.", :CartesianRange)
+    CartesianRange(inds)
+end
+
 # END 1.0 deprecations
