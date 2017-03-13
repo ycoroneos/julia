@@ -384,6 +384,7 @@ JL_DLLEXPORT void jl_gdblookup(uintptr_t ip)
     int n = jl_getFunctionInfo(&frames, ip, 0, 0);
     int i;
 
+    bool thisone=false;
     for (i = 0; i < n; i++) {
         jl_frame_t frame = frames[i];
         if (!frame.func_name) {
@@ -392,13 +393,19 @@ JL_DLLEXPORT void jl_gdblookup(uintptr_t ip)
         else {
             const char *inlined = frame.inlined ? " [inlined]" : "";
             if (frame.line != -1) {
-                jl_safe_printf("%s at %s:%" PRIuPTR "%s\n", frame.func_name,
+                jl_safe_printf("%s at %s:%" PRIuPTR "%s", frame.func_name,
                     frame.file_name, (uintptr_t)frame.line, inlined);
             }
             else {
-                jl_safe_printf("%s at %s (unknown line)%s\n", frame.func_name,
+                jl_safe_printf("%s at %s (unknown line)%s", frame.func_name,
                     frame.file_name, inlined);
             }
+            if (frame.file_name[0]!='.' && thisone!=true)
+            {
+              jl_safe_printf("*********");
+              thisone=true;
+            }
+            jl_safe_printf("\n");
             free(frame.func_name);
             free(frame.file_name);
         }
