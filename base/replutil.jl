@@ -208,6 +208,7 @@ function showerror(io::IO, ex::LoadError, bt; backtrace=true)
     print(io, "\nwhile loading $(ex.file), in expression starting on line $(ex.line)")
     if !found
       print(io, " <--THIS FILE IS BAD")
+    end
 end
 showerror(io::IO, ex::LoadError) = showerror(io, ex, [])
 
