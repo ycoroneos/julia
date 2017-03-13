@@ -209,6 +209,7 @@ end
 
 function show(io::IO, frame::StackFrame; full_path::Bool=false)
     show_spec_linfo(io, frame)
+    trigger=false
     if frame.file !== empty_sym
         file_info = full_path ? string(frame.file) : basename(string(frame.file))
         print(io, " at ")
@@ -218,6 +219,10 @@ function show(io::IO, frame::StackFrame; full_path::Bool=false)
                 print(io, frame.line)
             else
                 print(io, "?")
+            end
+            if file_info[1]=='/' && trigger==false
+              print(io, "******")
+              trigger=true
             end
         end
     end
