@@ -221,7 +221,7 @@ function show(io::IO, frame::StackFrame; full_path::Bool=false)
                 print(io, "?")
             end
             if file_info[1]=='/' && trigger==false
-              print(io, "******")
+              print(io, "<--THIS FILE IS BAD")
               trigger=true
             end
         end
@@ -229,6 +229,7 @@ function show(io::IO, frame::StackFrame; full_path::Bool=false)
     if frame.inlined
         print(io, " [inlined]")
     end
+    return trigger
 end
 
 end
